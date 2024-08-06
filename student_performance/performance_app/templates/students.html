@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Students for {{ course.title }} ({{ course.code }})</h2>
+    <table class="table table-hover" id="students-table">
+        <thead>
+            <tr>
+                <th scope="col">S/N</th>
+                <th scope="col">Student Name</th>
+                <th scope="col">Study Hours</th>
+                <th scope="col">Punctuality</th>
+                <th scope="col">Year 1 Semester 1 GPA</th>
+                <th scope="col">Year 1 Semester 2 GPA</th>
+                <th scope="col">Year 2 Semester 1 GPA</th>
+                <th scope="col">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student_course in student_courses %}
+            <tr data-index="{{ forloop.counter0 }}">
+                <td>{{ forloop.counter }}</td>
+                <td>{{ student_course.student.name }}</td>
+                <td>{{ student_course.student.studyHours }}</td>
+                <td>{{ student_course.student.punctuality }}</td>
+                <td>{{ student_course.year_one_semester_one_gpa }}</td>
+                <td>{{ student_course.year_one_semester_two_gpa }}</td>
+                <td>{{ student_course.year_two_semester_one_gpa }}</td>
+                <td>
+                    <button class="btn btn-primary predict-performance-btn" data-bs-toggle="modal" data-bs-target="#predictionModal">Predict Performance</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if student_courses.has_other_pages %}
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            {% if student_courses.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ student_courses.previous_page_number }}">Previous</a></li>
+            {% endif %}
+            {% for num in student_courses.paginator.page_range %}
+            <li class="page-item {% if student_courses.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            {% if student_courses.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ student_courses.next_page_number }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Prediction Modal -->
+<div class="modal fade" id="predictionModal" tabindex="-1" aria-labelledby="predictionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="predictionModalLabel">Performance Prediction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="predictionResult"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const predictButtons = document.querySelectorAll('.predict-performance-btn');
+        
+        predictButtons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const row = e.target.closest('tr');
+                const studentName = row.cells[1].innerText;
+                const studyHours = parseFloat(row.cells[2].innerText);
+                const punctuality = parseFloat(row.cells[3].innerText);
+                const gpa1 = parseFloat(row.cells[4].innerText);
+                const gpa2 = parseFloat(row.cells[5].innerText);
+                const gpa3 = parseFloat(row.cells[6].innerText);
+    
+                const studentData = {
+                    studyHours: studyHours,
+                    punctuality: punctuality,
+                    gpa1: gpa1,
+                    gpa2: gpa2,
+                    gpa3: gpa3
+                };
+    
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/predict', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(studentData)
+                    });
+    
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+    
+                    const result = await response.json();
+                    const prediction = result.prediction;
+    
+                    // Update the modal with the prediction result
+                    const resultElement = document.getElementById('predictionResult');
+                    resultElement.innerHTML = `<strong>${studentName}</strong>'s predicted performance is <strong>${prediction}</strong>.`;
+    
+                    // Show the modal
+                    const predictionModal = document.getElementById('predictionModal');
+                    predictionModal.show();
+    
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+    });
+    
+</script>
+    
+{% endblock %}

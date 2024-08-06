@@ -1,0 +1,23 @@
+body {
+    font-family: 'Montserrat', sans-serif;
+}
+
+h2, h3 {
+    font-weight: 700;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+.nav-link {
+    font-weight: 600;
+}
+
+.btn-primary {
+    font-weight: 600;
+}
+
+.card-header{
+    font-weight: bold;
+}
